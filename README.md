@@ -3,7 +3,7 @@
 Introduction:
 AtliQ Hardware (imaginary company) is one of the leading computer hardware producers in India and well expanded in other countries too.
 
-#📑 Problem Statement:
+📑 # Problem Statement:
 The management noticed that they do not get enough insights to make quick and smart data-informed decisions.
 
 There are 9 ad-hoc requests for which the company needs insights.
