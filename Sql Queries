@@ -1,0 +1,213 @@
+SQL-Queries
+
+## Request-1
+ Provide a sales report for Croma India for the financial year 2021, including all products, their variants, quantities sold, and total gross revenue.
+
+SELECT s.date,s.product_code,p.product,p.variant,s.sold_quantity,
+g.gross_price, ROUND((sold_quantity*gross_price),2) AS gross_price_total
+FROM fact_sales_monthly AS s
+JOIN dim_product AS p
+ON p.product_code = s.product_code
+JOIN fact_gross_price AS g
+ON g.product_code = s.product_code AND g.fiscal_year = get_fiscal_year(s.date)
+WHERE customer_code   = 90002002 AND
+	  get_fiscal_year(date) = 2021
+ORDER by date ASC;
+
+## Request -2 
+Provide an aggregated monthly gross sales report for Croma India.
+
+
+SELECT s.date, 
+       ROUND(SUM(sold_quantity*gross_price),2) AS gross_price_total
+FROM fact_sales_monthly AS s
+JOIN fact_gross_price AS g
+ON g.product_code = s.product_code AND 
+   g.fiscal_year AND get_fiscal_year(s.date)
+WHERE customer_code   = 90002002
+GROUP BY s.date
+ORDER BY s.date ASC;
+
+## Request - 3
+ Create a stored procedure for monthly gross sales report.
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_monthly_gross_sales_for_customer`(
+ in_customer_codes TEXT)
+BEGIN
+ SELECT s.date, 
+       ROUND(SUM(s.sold_quantity*g.gross_price),2) AS monthly_sales
+FROM fact_sales_monthly AS s
+JOIN fact_gross_price AS g
+ON g.product_code = s.product_code AND 
+   g.fiscal_year AND get_fiscal_year(s.date)
+WHERE find_in_set(s.customer_code,in_customer_codes) > 0
+GROUP BY s.date;
+END
+
+## Request - 4 
+Create a stored procedure to determine the market badge. If the total sold quantity is greater     than 5 million, the market should be considered Gold; otherwise, it should be considered Silver.
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_market_badge`(
+  IN in_market VARCHAR(45),
+  IN in_fiscal_year YEAR,
+  OUT out_badge VARCHAR(45))
+BEGIN
+  DECLARE qty INT DEFAULT 0;
+  IF in_market = "" THEN 
+  SET in_market = "India";
+  end if;
+SELECT SUM(sold_quantity) INTO qty
+FROM fact_sales_monthly AS s
+JOIN dim_customer AS c
+ON c.customer_code = s.customer_code
+WHERE get_fiscal_year(s.date) = in_fiscal_year AND
+ c.market = in_market
+GROUP BY c.market;
+
+IF qty>5000000 THEN
+    SET out_badge = "Gold";
+ELSE 
+    SET out_badge = "Silver";
+END if;
+END
+
+## Request - 5
+ Identify the top market, top selling products, top customers based on net sales.
+
+# Top market
+SELECT market,
+  ROUND(SUM(net_sales)/1000000,2) AS net_sales_mln
+FROM gdb0041.net_sales
+WHERE fiscal_year = 2021
+GROUP BY market
+ORDER BY net_sales_mln DESC
+LIMIT 5;
+
+# Top customers
+SELECT c.customer,
+  ROUND(SUM(net_sales)/1000000,2) AS net_sales_mln
+FROM gdb0041.net_sales AS n
+JOIN dim_customer AS c
+ON n.customer_code=c.customer_code
+WHERE fiscal_year = 2021
+GROUP BY c.customer
+ORDER BY net_sales_mln DESC
+LIMIT 5;
+
+# Top Products
+SELECT p.product,
+  ROUND(SUM(net_sales)/1000000,2) AS net_sales_mln
+FROM gdb0041.net_sales AS n
+JOIN dim_product AS p
+ON n.product_code=p.product_code
+WHERE fiscal_year = 2021
+GROUP BY p.product
+ORDER BY net_sales_mln DESC
+LIMIT 5;
+
+## Request - 6 
+Create a stored procedure to return the top N markets, customers, products based on net sales.
+
+# top_n_product
+CREATE DEFINER=`root`@`localhost` PROCEDURE `top_n_products_by_net_sales`(
+in_fiscal_year INT,
+in_top_n INT)
+BEGIN
+SELECT product,
+round(sum(net_sales)/1000000,2) as net_sales_mln
+FROM net_sales 
+WHERE fiscal_year = in_fiscal_year
+LIMIT in_top_n;
+END
+
+# top_n_market
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_top_n_markets_by_net_sales`(
+ in_fiscal_year INT,
+ in_top_n INT)
+BEGIN
+SELECT market,
+  ROUND(SUM(net_sales)/1000000,2) AS net_sales_mln
+FROM gdb0041.net_sales
+WHERE fiscal_year = in_fiscal_year 
+GROUP BY market
+ORDER BY net_sales_mln DESC
+LIMIT in_top_n;
+END
+
+# top_n_customer
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_top_n_customers_by_net_sales`(
+in_market VARCHAR(45),
+in_fiscal_year INT,
+in_top_n INT
+)
+BEGIN
+SELECT c.customer,
+  ROUND(SUM(net_sales)/1000000,2) AS net_sales_mln
+FROM gdb0041.net_sales AS s
+JOIN dim_customer AS c
+ON s.customer_code=c.customer_code
+WHERE s.fiscal_year = in_fiscal_year AND
+      s.market = in_market
+GROUP BY c.customer
+ORDER BY net_sales_mln DESC
+LIMIT in_top_n;
+END
+
+## Request - 7
+Provide a bar chart report for the top 10 customers based on percentage net sales for the financial year 2021.
+
+WITH CTE1 AS (
+SELECT c.customer,
+  ROUND(SUM(net_sales)/1000000,2) AS net_sales_mln
+FROM gdb0041.net_sales AS s
+JOIN dim_customer AS c
+ON s.customer_code=c.customer_code
+WHERE s.fiscal_year = 2021
+GROUP BY c.customer)
+SELECT *,
+       net_sales_mln*100/SUM(net_sales_mln) OVER() AS pct
+FROM CTE1
+ORDER BY net_sales_mln DESC
+LIMIT 10;
+
+## Request - 8
+Provide a region-wise percentage net sales breakdown by customers for the financial year 2021.
+
+WITH CTE1 AS(
+SELECT c.customer,
+       c.region,
+       ROUND(SUM(net_sales)/1000000,2) AS net_sales_mln
+FROM gdb0041.net_sales AS s
+JOIN dim_customer AS c
+ON s.customer_code=c.customer_code
+WHERE s.fiscal_year = 2021
+GROUP BY c.customer,c.region)
+SELECT *,
+net_sales_mln*100/SUM(net_sales_mln) OVER(PARTITION BY region) AS pct_share_by_region
+FROM CTE1
+ORDER BY region,net_sales_mln;
+
+## Request - 9
+Create a stored procedure to identify the top N products in each division based on quantity sold for a given FY such as  2021.
+
+CREATE DEFINER=`root`@`localhost` PROCEDURE `get_top_n_products_per_division_by_qty_sold`(
+in_fiscal_year INT,
+in_top_n INT)
+BEGIN
+WITH CTE1 AS(
+SELECT p.division,
+       p.product,
+       SUM(sold_quantity) as qty_sold
+FROM fact_sales_monthly AS s
+JOIN dim_product AS p
+ON s.product_code = p.product_code
+WHERE fiscal_year = in_fiscal_year
+GROUP BY p.division,p.product),
+CTE2 AS(
+SELECT *,
+dense_rank()OVER(PARTITION BY division ORDER BY qty_sold DESC) AS drnk
+FROM CTE1)
+SELECT *
+FROM CTE2
+WHERE drnk<=in_top_n;
+END
