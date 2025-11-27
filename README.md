@@ -35,3 +35,6 @@ Excel: Created visuals including Bar Charts, Matrices, Line Charts, and Donut Ch
 8. Provide a region-wise percentage net sales breakdown by customers for the financial year 2021.
 
 9. Create a stored procedure to identify the top N products in each division based on quantity sold for a given FY such as  2021.
+
+# Author
+Mahi Agarwal 📧 Email 🔗 LinkedIn
