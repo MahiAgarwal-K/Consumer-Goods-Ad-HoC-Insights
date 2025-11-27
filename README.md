@@ -3,7 +3,7 @@
 Introduction:
 AtliQ Hardware (imaginary company) is one of the leading computer hardware producers in India and well expanded in other countries too.
 
-📑 Problem Statement:
+#📑 Problem Statement:
 The management noticed that they do not get enough insights to make quick and smart data-informed decisions.
 
 There are 9 ad-hoc requests for which the company needs insights.
@@ -12,11 +12,11 @@ Run a SQL Query to answer these requests.
 
 Convert into visualizations and present insights to top-level management
 
-TOOLS & APPROACH:
+# TOOLS & APPROACH:
 MySQL: Mastered concepts like Joins, CTEs, Subqueries, Window functions, Views, Stored Procedure and Date functions.
 Excel: Created visuals including Bar Charts, Matrices, Line Charts, and Donut Charts.
 
- Requests:
+ # Requests:
 
 1.Provide a sales report for Croma India for the financial year 2021, including all products, their variants, quantities sold, and total gross revenue.
 
