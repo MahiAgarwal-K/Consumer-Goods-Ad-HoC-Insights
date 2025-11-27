@@ -37,4 +37,5 @@ Excel: Created visuals including Bar Charts, Matrices, Line Charts, and Donut Ch
 9. Create a stored procedure to identify the top N products in each division based on quantity sold for a given FY such as  2021.
 
 # Author
-Mahi Agarwal 📧 Email 🔗 LinkedIn
+Mahi Agarwal 📧 [Email](mahiagarwal2710@gmail.com) 🔗 [LinkedIn](https://www.linkedin.com/in/mahiagarwal2710/)
+
